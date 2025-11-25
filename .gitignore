@@ -1,0 +1,53 @@
+# Node modules
+/node_modules/
+
+# Build outputs
+/dist/
+/build/
+/out/
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDEs and editors
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# TypeScript
+*.tsbuildinfo
+
+# Test coverage
+/coverage/
+
+# Optional: lock files (if you want to regenerate)
+/package-lock.json
+/yarn.lock
+/pnpm-lock.yaml
+
+# Misc
+*.local
+*.cache
+*.tmp
+
+# Docker
+docker-compose.override.yml
+Dockerfile.dev
+
+/src/generated/prisma
