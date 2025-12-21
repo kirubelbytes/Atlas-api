@@ -4,9 +4,9 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
+  url      = env("DATABASE_URL")
 }
- 
+
 enum Role {
   USER
   ADMIN
@@ -23,7 +23,7 @@ enum OrderStatus {
 
 enum PaymentStatus {
   PENDING
-  PROCESSING   
+  PROCESSING
   SUCCESS
   FAILED
   REFUNDED
@@ -57,65 +57,63 @@ enum WishlistPrivacy {
   PRIVATE
 }
 
- 
 model User {
-  id              String         @id @default(uuid())
+  id              String   @id @default(uuid()) @db.Uuid
   name            String
-  email           String         @unique
+  email           String   @unique
   password        String
-  isEmailVerified Boolean        @default(false)
-  role            Role           @default(USER)
-  
-  addresses       Address[]      @relation("UserAddresses")  
-  
+  isEmailVerified Boolean  @default(false)
+  role            Role     @default(USER)
+
+  addresses Address[] @relation("UserAddresses")
+
   defaultShippingAddressId String?
   defaultShippingAddress   Address? @relation("DefaultShipping", fields: [defaultShippingAddressId], references: [id])
-  
-  defaultBillingAddressId  String?
-  defaultBillingAddress    Address? @relation("DefaultBilling", fields: [defaultBillingAddressId], references: [id])
 
+  defaultBillingAddressId String?
+  defaultBillingAddress   Address? @relation("DefaultBilling", fields: [defaultBillingAddressId], references: [id])
 
-  orders          Order[]
-  cart            Cart?
-  reviews         Review[]
-  wishlists       Wishlist[]     
-  payments        Payment[]
+  orders    Order[]
+  cart      Cart?
+  reviews   Review[]
+  wishlists Wishlist[]
+  payments  Payment[]
 
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  deletedAt       DateTime?
-  createdBy       String?        
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+  createdBy String?
 
-  @@map("users")
   @@index([email])
   @@index([createdAt])
+  @@map("users")
 }
 
 model Address {
-  id         String   @id @default(uuid())
-  
-  userId     String
-  user       User     @relation("UserAddresses", fields: [userId], references: [id])
-  
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String
+  user   User   @relation("UserAddresses", fields: [userId], references: [id])
+
   street     String
   city       String
   state      String?
   postalCode String?
   country    String
-  
+
   usersShippingDefault User[] @relation("DefaultShipping")
   usersBillingDefault  User[] @relation("DefaultBilling")
 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  deletedAt  DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  @@map("addresses")
   @@index([userId])
+  @@map("addresses")
 }
 
 model Category {
-  id          String    @id @default(uuid())
+  id          String    @id @default(uuid()) @db.Uuid
   name        String
   slug        String    @unique
   description String?
@@ -128,11 +126,11 @@ model Category {
 }
 
 model Product {
-  id          String             @id @default(uuid())
+  id          String             @id @default(uuid()) @db.Uuid
   name        String
   slug        String             @unique
   description String?
-  basePrice   Decimal            @db.Decimal(18,2)
+  basePrice   Decimal            @db.Decimal(18, 2)
   categoryId  String
   category    Category           @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
@@ -143,52 +141,51 @@ model Product {
   updatedAt   DateTime           @updatedAt
   deletedAt   DateTime?
 
-  @@map("products")
   @@index([categoryId])
   @@index([createdAt])
+  @@map("products")
 }
 
 model ProductImage {
-  id        String   @id @default(uuid())
+  id        String    @id @default(uuid()) @db.Uuid
   url       String
   altText   String?
   productId String
-  product   Product  @relation(fields: [productId], references: [id])
-  createdAt DateTime @default(now())
+  product   Product   @relation(fields: [productId], references: [id])
+  createdAt DateTime  @default(now())
   deletedAt DateTime?
 
-  @@map("product_images")
   @@index([productId])
+  @@map("product_images")
 }
 
 model ProductVariation {
-  id            String         @id @default(uuid())
-  productId     String
-  product       Product        @relation(fields: [productId], references: [id])
-  sku           String         @unique
-  name          String
-  price         Decimal?       @db.Decimal(18,2)
-  stock         Int            @default(0)
-  attributes    Json
-  images        Json?
-  
+  id         String   @id @default(uuid()) @db.Uuid
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+  sku        String   @unique
+  name       String
+  price      Decimal? @db.Decimal(18, 2)
+  stock      Int      @default(0)
+  attributes Json
+  images     Json?
+
   inventoryLogs InventoryLog[]
   cartItems     CartItem[]
   orderItems    OrderItem[]
-  wishlistItems WishlistItem[]  
+  wishlistItems WishlistItem[]
 
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  deletedAt     DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
 
-  @@map("product_variations")
   @@index([productId])
   @@index([sku])
+  @@map("product_variations")
 }
 
-
 model Cart {
-  id        String     @id @default(uuid())
+  id        String     @id @default(uuid()) @db.Uuid
   userId    String     @unique
   user      User       @relation(fields: [userId], references: [id])
   items     CartItem[]
@@ -199,7 +196,7 @@ model Cart {
 }
 
 model CartItem {
-  id          String           @id @default(uuid())
+  id          String           @id @default(uuid()) @db.Uuid
   cartId      String
   cart        Cart             @relation(fields: [cartId], references: [id])
   variationId String
@@ -207,51 +204,50 @@ model CartItem {
   quantity    Int              @default(1)
   addedAt     DateTime         @default(now())
 
-  @@unique([cartId, variationId])  
+  @@unique([cartId, variationId])
   @@map("cart_items")
 }
 
 model Wishlist {
-  id        String          @id @default(uuid())
-  name      String          @default("My Wishlist")  
-  token     String?         @unique  
-  privacy   WishlistPrivacy @default(PRIVATE)
-  userId    String
-  user      User            @relation(fields: [userId], references: [id])
-  items     WishlistItem[]
-  
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id      String          @id @default(uuid()) @db.Uuid
+  name    String          @default("My Wishlist")
+  token   String?         @unique
+  privacy WishlistPrivacy @default(PRIVATE)
+  userId  String
+  user    User            @relation(fields: [userId], references: [id])
+  items   WishlistItem[]
 
-  @@map("wishlists")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
+  @@map("wishlists")
 }
 
 model WishlistItem {
-  id          String           @id @default(uuid())
+  id          String           @id @default(uuid()) @db.Uuid
   wishlistId  String
   wishlist    Wishlist         @relation(fields: [wishlistId], references: [id])
   variationId String
   variation   ProductVariation @relation(fields: [variationId], references: [id])
-  
-  priority    Int              @default(0)  
-  quantity    Int              @default(1)  
-  note        String?          
-  
-  addedAt     DateTime         @default(now())
+
+  priority Int     @default(0)
+  quantity Int     @default(1)
+  note     String?
+
+  addedAt DateTime @default(now())
 
   @@unique([wishlistId, variationId])
   @@map("wishlist_items")
 }
 
- 
 model Order {
-  id               String               @id @default(uuid())
-  userId           String
-  user             User                 @relation(fields: [userId], references: [id])
-  totalAmount      Decimal              @db.Decimal(18,2)
-  status           OrderStatus          @default(PENDING)
-  orderItems       OrderItem[]
+  id          String      @id @default(uuid()) @db.Uuid
+  userId      String
+  user        User        @relation(fields: [userId], references: [id])
+  totalAmount Decimal     @db.Decimal(18, 2)
+  status      OrderStatus @default(PENDING)
+  orderItems  OrderItem[]
 
   shippingName     String?
   shippingStreet   String?
@@ -263,113 +259,115 @@ model Order {
   shippingCarrier  String?
   shippingTracking String?
 
-  paymentId        String?
-  payment          Payment?             @relation(fields: [paymentId], references: [id])
-  transactions     PaymentTransaction[]
-  
-  events           OrderEvent[]
+  paymentId    String?
+  payment      Payment?             @relation(fields: [paymentId], references: [id])
+  transactions PaymentTransaction[]
 
-  createdAt        DateTime             @default(now())
-  updatedAt        DateTime             @updatedAt
-  deletedAt        DateTime?
+  events OrderEvent[]
 
-  @@map("orders")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@map("orders")
 }
 
 model OrderItem {
-  id          String            @id @default(uuid())
+  id          String            @id @default(uuid()) @db.Uuid
   orderId     String
   order       Order             @relation(fields: [orderId], references: [id])
   variationId String?
   variation   ProductVariation? @relation(fields: [variationId], references: [id])
   quantity    Int
-  price       Decimal           @db.Decimal(18,2)  
+  price       Decimal           @db.Decimal(18, 2)
   createdAt   DateTime          @default(now())
 
   @@map("order_items")
 }
 
- 
 model Payment {
-  id           String               @id @default(uuid())
-  userId       String?
-  user         User?                @relation(fields: [userId], references: [id])
-  
-  provider     PaymentProvider      
-  method       PaymentMethod        
-  status       PaymentStatus        @default(PENDING)
-  
+  id String @id @default(uuid()) @db.Uuid
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  provider     PaymentProvider
+  method       PaymentMethod
+  status       PaymentStatus   @default(PENDING)
+
   transactions PaymentTransaction[]
   orders       Order[]
-  
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
 
-  @@map("payments")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@index([userId])
   @@index([status])
+  @@map("payments")
 }
 
 model PaymentTransaction {
-  id            String        @id @default(uuid())
-  paymentId     String
-  payment       Payment       @relation(fields: [paymentId], references: [id])
-  orderId       String
-  order         Order         @relation(fields: [orderId], references: [id])
-  amount        Decimal       @db.Decimal(18,2)
-  
-  transactionId String?       @unique 
-  status        PaymentStatus @default(PENDING)
-  
-  metadata      Json?         
-  
-  createdAt     DateTime      @default(now())
+  id        String  @id @default(uuid()) @db.Uuid
+  paymentId String
+  payment   Payment @relation(fields: [paymentId], references: [id])
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+  amount    Decimal @db.Decimal(18, 2)
 
-  @@map("payment_transactions")
+  transactionId String?       @unique
+  status        PaymentStatus @default(PENDING)
+
+  metadata Json?
+
+  createdAt DateTime @default(now())
+
   @@index([paymentId])
   @@index([transactionId])
+  @@map("payment_transactions")
 }
 
- 
 model Promotion {
-  id        String             @id @default(uuid())
+  id        String             @id @default(uuid()) @db.Uuid
   name      String
   type      PromotionType
-  value     Decimal            @db.Decimal(18,2)
+  value     Decimal            @db.Decimal(18, 2)
   startDate DateTime
   endDate   DateTime
   isActive  Boolean            @default(true)
   products  PromotionProduct[]
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
+
   @@map("promotions")
 }
 
 model PromotionProduct {
-  id          String    @id @default(uuid())
+  id          String    @id @default(uuid()) @db.Uuid
   productId   String
   product     Product   @relation(fields: [productId], references: [id])
   promotionId String
   promotion   Promotion @relation(fields: [promotionId], references: [id])
+
   @@unique([productId, promotionId])
   @@map("promotion_products")
 }
 
 model OrderEvent {
-  id        String      @id @default(uuid())
+  id        String      @id @default(uuid()) @db.Uuid
   orderId   String
   order     Order       @relation(fields: [orderId], references: [id])
   status    OrderStatus @default(PENDING)
   note      String?
   createdAt DateTime    @default(now())
+
   @@map("order_events")
 }
 
 model Review {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   productId String
@@ -377,11 +375,12 @@ model Review {
   rating    Int
   comment   String?
   createdAt DateTime @default(now())
+
   @@map("reviews")
 }
 
 model InventoryLog {
-  id          String           @id @default(uuid())
+  id          String           @id @default(uuid()) @db.Uuid
   variationId String
   variation   ProductVariation @relation(fields: [variationId], references: [id])
   change      Int
@@ -389,16 +388,18 @@ model InventoryLog {
   referenceId String?
   createdBy   String?
   createdAt   DateTime         @default(now())
+
   @@map("inventory_logs")
 }
 
 model AuditLog {
-  id        String   @id @default(uuid())
+  id        String   @id @default(uuid()) @db.Uuid
   model     String
   modelId   String
   action    String
   payload   Json?
   actorId   String?
   createdAt DateTime @default(now())
+
   @@map("audit_logs")
 }
