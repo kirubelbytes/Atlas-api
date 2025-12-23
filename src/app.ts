@@ -4,6 +4,7 @@ import cors from 'cors';
 import pinoHttp from 'pino-http';
 import { logger } from './config/logger.js';
 import errorHandler from './middleware/error.middleware.js';
+import rootRouter from './routes/index.js';
 
 const app = express();
 
@@ -15,9 +16,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req: Request, res: Response) => {
-    res.send("I'm Okay")
-});
+app.use(rootRouter)
 
 app.use(errorHandler);
 export default app;
