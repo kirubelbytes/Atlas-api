@@ -57,6 +57,12 @@ enum WishlistPrivacy {
   PRIVATE
 }
 
+enum VerificationType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+
 model User {
   id              String   @id @default(uuid()) @db.Uuid
   name            String
@@ -67,10 +73,10 @@ model User {
 
   addresses Address[] @relation("UserAddresses")
 
-  defaultShippingAddressId String?
+  defaultShippingAddressId String? @db.Uuid
   defaultShippingAddress   Address? @relation("DefaultShipping", fields: [defaultShippingAddressId], references: [id])
 
-  defaultBillingAddressId String?
+  defaultBillingAddressId String? @db.Uuid
   defaultBillingAddress   Address? @relation("DefaultBilling", fields: [defaultBillingAddressId], references: [id])
 
   orders    Order[]
@@ -78,6 +84,9 @@ model User {
   reviews   Review[]
   wishlists Wishlist[]
   payments  Payment[]
+   
+  verificationTokens VerificationToken[]
+  refreshTokens      RefreshToken[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -89,10 +98,36 @@ model User {
   @@map("users")
 }
 
+model VerificationToken {
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String @db.Uuid
+  tokenHash String
+  type      VerificationType
+  expiresAt DateTime
+  attempts  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String @db.Uuid
+  tokenHash String
+  expiresAt DateTime
+  revoked   Boolean  @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
 model Address {
   id String @id @default(uuid()) @db.Uuid
 
-  userId String
+  userId String @db.Uuid
   user   User   @relation("UserAddresses", fields: [userId], references: [id])
 
   street     String
@@ -131,7 +166,7 @@ model Product {
   slug        String             @unique
   description String?
   basePrice   Decimal            @db.Decimal(18, 2)
-  categoryId  String
+  categoryId  String @db.Uuid
   category    Category           @relation(fields: [categoryId], references: [id])
   images      ProductImage[]
   variations  ProductVariation[]
@@ -150,7 +185,7 @@ model ProductImage {
   id        String    @id @default(uuid()) @db.Uuid
   url       String
   altText   String?
-  productId String
+  productId String @db.Uuid
   product   Product   @relation(fields: [productId], references: [id])
   createdAt DateTime  @default(now())
   deletedAt DateTime?
@@ -161,7 +196,7 @@ model ProductImage {
 
 model ProductVariation {
   id         String   @id @default(uuid()) @db.Uuid
-  productId  String
+  productId  String @db.Uuid
   product    Product  @relation(fields: [productId], references: [id])
   sku        String   @unique
   name       String
@@ -186,7 +221,7 @@ model ProductVariation {
 
 model Cart {
   id        String     @id @default(uuid()) @db.Uuid
-  userId    String     @unique
+  userId    String     @unique @db.Uuid
   user      User       @relation(fields: [userId], references: [id])
   items     CartItem[]
   updatedAt DateTime   @updatedAt
@@ -197,9 +232,9 @@ model Cart {
 
 model CartItem {
   id          String           @id @default(uuid()) @db.Uuid
-  cartId      String
+  cartId      String @db.Uuid
   cart        Cart             @relation(fields: [cartId], references: [id])
-  variationId String
+  variationId String @db.Uuid
   variation   ProductVariation @relation(fields: [variationId], references: [id])
   quantity    Int              @default(1)
   addedAt     DateTime         @default(now())
@@ -213,7 +248,7 @@ model Wishlist {
   name    String          @default("My Wishlist")
   token   String?         @unique
   privacy WishlistPrivacy @default(PRIVATE)
-  userId  String
+  userId  String @db.Uuid
   user    User            @relation(fields: [userId], references: [id])
   items   WishlistItem[]
 
@@ -226,9 +261,9 @@ model Wishlist {
 
 model WishlistItem {
   id          String           @id @default(uuid()) @db.Uuid
-  wishlistId  String
+  wishlistId  String @db.Uuid
   wishlist    Wishlist         @relation(fields: [wishlistId], references: [id])
-  variationId String
+  variationId String @db.Uuid
   variation   ProductVariation @relation(fields: [variationId], references: [id])
 
   priority Int     @default(0)
@@ -243,7 +278,7 @@ model WishlistItem {
 
 model Order {
   id          String      @id @default(uuid()) @db.Uuid
-  userId      String
+  userId      String @db.Uuid
   user        User        @relation(fields: [userId], references: [id])
   totalAmount Decimal     @db.Decimal(18, 2)
   status      OrderStatus @default(PENDING)
@@ -259,7 +294,7 @@ model Order {
   shippingCarrier  String?
   shippingTracking String?
 
-  paymentId    String?
+  paymentId    String? @db.Uuid
   payment      Payment?             @relation(fields: [paymentId], references: [id])
   transactions PaymentTransaction[]
 
@@ -277,9 +312,9 @@ model Order {
 
 model OrderItem {
   id          String            @id @default(uuid()) @db.Uuid
-  orderId     String
+  orderId     String @db.Uuid
   order       Order             @relation(fields: [orderId], references: [id])
-  variationId String?
+  variationId String? @db.Uuid
   variation   ProductVariation? @relation(fields: [variationId], references: [id])
   quantity    Int
   price       Decimal           @db.Decimal(18, 2)
@@ -291,7 +326,7 @@ model OrderItem {
 model Payment {
   id String @id @default(uuid()) @db.Uuid
 
-  userId String?
+  userId String? @db.Uuid
   user   User?   @relation(fields: [userId], references: [id])
 
   provider     PaymentProvider
@@ -311,9 +346,9 @@ model Payment {
 
 model PaymentTransaction {
   id        String  @id @default(uuid()) @db.Uuid
-  paymentId String
+  paymentId String @db.Uuid
   payment   Payment @relation(fields: [paymentId], references: [id])
-  orderId   String
+  orderId   String @db.Uuid
   order     Order   @relation(fields: [orderId], references: [id])
   amount    Decimal @db.Decimal(18, 2)
 
@@ -346,9 +381,9 @@ model Promotion {
 
 model PromotionProduct {
   id          String    @id @default(uuid()) @db.Uuid
-  productId   String
+  productId   String @db.Uuid
   product     Product   @relation(fields: [productId], references: [id])
-  promotionId String
+  promotionId String @db.Uuid
   promotion   Promotion @relation(fields: [promotionId], references: [id])
 
   @@unique([productId, promotionId])
@@ -357,7 +392,7 @@ model PromotionProduct {
 
 model OrderEvent {
   id        String      @id @default(uuid()) @db.Uuid
-  orderId   String
+  orderId   String @db.Uuid
   order     Order       @relation(fields: [orderId], references: [id])
   status    OrderStatus @default(PENDING)
   note      String?
@@ -368,9 +403,9 @@ model OrderEvent {
 
 model Review {
   id        String   @id @default(uuid()) @db.Uuid
-  userId    String
+  userId    String @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
-  productId String
+  productId String @db.Uuid
   product   Product  @relation(fields: [productId], references: [id])
   rating    Int
   comment   String?
@@ -381,7 +416,7 @@ model Review {
 
 model InventoryLog {
   id          String           @id @default(uuid()) @db.Uuid
-  variationId String
+  variationId String @db.Uuid
   variation   ProductVariation @relation(fields: [variationId], references: [id])
   change      Int
   reason      String?
