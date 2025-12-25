@@ -10,7 +10,7 @@ export class AuthService {
 
     const existingUser = await prismaClient.user.findUnique({ where: { email } });
     if (existingUser) {
-      return new BadRequestError('User already exists');
+      throw new BadRequestError('User already exists');
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -50,13 +50,13 @@ export class AuthService {
           tokenHash: otpHash,
           type: 'EMAIL_VERIFICATION',
           expiresAt: { gt: new Date() },
-          user: { email },   
+          user: { email },
         },
         include: { user: true },
       });
 
       if (!tokenRecord) {
-        return new BadRequestError('Invalid or expired OTP');
+        throw new BadRequestError('Invalid or expired OTP');
       }
 
       const updatedUser = await tx.user.update({
@@ -76,5 +76,38 @@ export class AuthService {
       .catch((err) => console.error('Welcome Email Error:', err));
 
     return user;
+  }
+
+  static async resendOTP(email: string) {
+    const user = await prismaClient.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestError('User not found');
+    }
+
+    if (user.isEmailVerified) {
+      throw new BadRequestError('Email is already verified');
+    }
+
+    const otp = crypto.randomInt(100000, 999999).toString();
+    const otpHash = crypto.createHash('sha256').update(otp).digest('hex');
+
+    await prismaClient.$transaction(async (tx) => {
+      await tx.verificationToken.deleteMany({
+        where: { userId: user.id, type: 'EMAIL_VERIFICATION' },
+      });
+
+      await tx.verificationToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: otpHash,
+          type: 'EMAIL_VERIFICATION',
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        },
+      });
+    });
+
+    mailService
+      .sendVerificationEmail(user.email, otp)
+      .catch((err) => console.error('Resend Email Error:', err));
   }
 }
