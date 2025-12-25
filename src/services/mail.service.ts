@@ -19,6 +19,15 @@ class MailService {
       html: `<p>Your verification code is <strong>${otp}</strong></p>`,
     });
   }
+
+  async sendWelcomEmail(to: string, name: string) {
+   return await this.transporter.sendMail({
+      from : '"Kidame Gebeya Team" <no-reply@kidamegebeya.com>',
+      to,
+      subject : "Welcome to Kidame Gebeya",
+      html : `<h1>Welcome, ${name}!</h1><p>Your email has been verified. Start exploring our marketplace now.</p>`,
+   })
+  }
 }
 
 export const mailService = new MailService();
