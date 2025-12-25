@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { catchAsync } from '../utils/catchAsync.js';
-import { signUp, verifyEmail } from '../controllers/auth.controller.js';
+import { resendOTP, signUp, verifyEmail } from '../controllers/auth.controller.js';
 
 const authRouter = Router();
-authRouter.post('/signup', catchAsync(signUp));
-authRouter.post('/verify-email', catchAsync(verifyEmail));
+authRouter.post('/signup', signUp);
+authRouter.post('/verify-email', verifyEmail);
+authRouter.post('/resend-otp', resendOTP);
 
 export default authRouter;
