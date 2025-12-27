@@ -3,6 +3,10 @@ import crypto from 'node:crypto';
 import { prismaClient } from '../config/database.js';
 import { BadRequestError } from '../errors/http/bad-request.error.js';
 import { mailService } from './mail.service.js';
+import { UnauthorizedError } from '../errors/http/unauthorized.error.js';
+import { ForbiddenError } from '../errors/http/forbidden.error.js';
+import { TokenService } from './token.service.js';
+
 
 export class AuthService {
   static async registerUser(data: any) {
@@ -109,5 +113,32 @@ export class AuthService {
     mailService
       .sendVerificationEmail(user.email, otp)
       .catch((err) => console.error('Resend Email Error:', err));
+  }
+
+  static async login(data: any) {
+    const { email, password } = data
+    const user = await prismaClient.user.findUnique({where: {email}});
+
+    const isMatch = await bcrypt.compare(password, user?.password || '') 
+
+    if(!user || !isMatch) 
+        throw  new UnauthorizedError("Invalid credentials")
+   
+    if (!user?.isEmailVerified)
+      throw new ForbiddenError('Please verify your email before logging in');
+
+    const accessToken = await TokenService.generateAccess(user.id);
+    const refreshToken = await TokenService.generateRefresh(user.id);
+
+    const tokenHash = crypto.createHash('sha256').update(refreshToken).digest('hex')
+
+    await prismaClient.refreshToken.create({
+        data: {
+            userId: user.id,
+            tokenHash,
+            expiresAt : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+        }
+    })
+    return { user, accessToken, refreshToken };
   }
 }
